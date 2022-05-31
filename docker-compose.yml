@@ -1,0 +1,31 @@
+version: '3.7'
+
+services:
+  dolibarr:
+    image: 'dolibarr:latest'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DOLIBARR_DOCUMENTS=/documents
+    ports:
+      - '8080:80'
+    volumes:
+      - dolibarr_config:/var/www/html/conf
+      - dolibarr_documents:/documents
+
+  postgres:
+    image: 'postgres:13-alpine'
+    environment:
+      - POSTGRES_USER=dolibarr
+      - POSTGRES_PASSWORD=dolibarr
+      - POSTGRES_DB=dolibarr
+    ports:
+      - '5432:5432'
+    volumes:
+        - postgresql:/var/lib/postgresql/data
+
+volumes:
+  postgresql: {}
+  dolibarr_config: {}
+  dolibarr_documents: {}
