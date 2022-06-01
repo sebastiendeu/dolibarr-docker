@@ -3,12 +3,15 @@ ARG VERSION=15.0.2
 FROM alpine:latest as downloader
 ARG VERSION
 
-RUN wget https://github.com/Dolibarr/dolibarr/archive/refs/tags/${VERSION}.zip -O dolibarr.zip
+RUN if [ ${VERSION} == "main" ]; then wget https://github.com/Dolibarr/dolibarr/archive/refs/heads/develop.zip -O dolibarr.zip; fi
+RUN if [ ${VERSION} != "main" ]; then wget https://github.com/Dolibarr/dolibarr/archive/refs/tags/${VERSION}.zip -O dolibarr.zip; fi
+
 RUN unzip dolibarr.zip -d /tmp/
+RUN if [ ${VERSION} == "main" ]; then mv /tmp/dolibarr-develop /tmp/dolibarr; fi
+RUN if [ ${VERSION} != "main" ]; then mv /tmp/dolibarr-${VERSION} /tmp/dolibarr; fi
 RUN rm dolibarr.zip
 
 FROM php:8-apache
-ARG VERSION
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["apache2-foreground"]
@@ -26,6 +29,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
     docker-php-ext-install -j$(nproc) gd intl zip calendar pgsql
 
-COPY --from=downloader /tmp/dolibarr-${VERSION}/htdocs /var/www/html/
+COPY --from=downloader /tmp/dolibarr/htdocs /var/www/html/
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
